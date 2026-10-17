@@ -17,6 +17,7 @@ env/
 
 # Audio Dataset Files (Generated / Large files)
 dataset/
+ai-voice-detection/
 *.wav
 *.mp3
 *.flac

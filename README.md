@@ -1,3 +1,12 @@
+---
+title: Ai Voice Detection
+emoji: 🎙️
+colorFrom: indigo
+colorTo: purple
+sdk: gradio
+app_file: app.py
+---
+
 # Lightweight Privacy-Preserving Voice Anti-Spoofing & Multilingual Speech Analysis System
 
 An end-to-end, CPU-friendly audio forensics platform that performs two core tasks:
