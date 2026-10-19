@@ -1,7 +1,7 @@
 fastapi>=0.115.2
 uvicorn[standard]
-python-multipart==0.0.17
-soundfile==0.12.1
+python-multipart>=0.0.18
+soundfile>=0.12.1
 numpy<2.0.0
 pydantic
 librosa
