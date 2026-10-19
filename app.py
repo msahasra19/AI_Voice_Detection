@@ -56,6 +56,9 @@ footer { display: none !important; }
     background: #080b14 !important;
     border: none !important;
 }
+.container {
+    padding-top: 48px !important;
+}
 """ + css_content
 
 head_tags = """
