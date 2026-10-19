@@ -1,10 +1,19 @@
-import gradio as gr
+import os
 from pathlib import Path
 from fastapi.staticfiles import StaticFiles
+import gradio as gr
 from app.main import app as fastapi_app
 from app.utils import load_audio_file
 from app.model import detect_voice
 
+try:
+    import spaces
+    gpu_decorator = spaces.GPU
+except (ImportError, Exception):
+    def gpu_decorator(fn):
+        return fn
+
+@gpu_decorator
 def analyze_audio_gradio(audio_path):
     if not audio_path:
         return "Please upload or record an audio file.", 0.0, "N/A", {}, ""
