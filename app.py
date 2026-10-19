@@ -1,14 +1,13 @@
 import os
 import sys
 from pathlib import Path
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+import uvicorn
 import gradio as gr
 
 # Ensure workspace root is in sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from app.main import app as fastapi_app
+from app.main import app
 from app.utils import load_audio_file
 from app.model import detect_voice
 
@@ -32,62 +31,13 @@ def predict_voice_sample(audio_path):
     audio = load_audio_file(audio_bytes)
     return detect_voice(audio)
 
-# Full-screen glassmorphic dashboard container
-EMBEDDED_DASHBOARD_HTML = """
-<style>
-body, html {
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: hidden !important;
-    width: 100% !important;
-    height: 100% !important;
-}
-.gradio-container {
-    max-width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    background: #080b14 !important;
-    border: none !important;
-}
-footer {
-    display: none !important;
-}
-iframe#forensics-dashboard {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    border: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    z-index: 999999 !important;
-}
-</style>
-<iframe id="forensics-dashboard" src="/custom_ui/index.html"></iframe>
-"""
-
+# Gradio demo container mounted at /gradio
 with gr.Blocks(title="Voice Anti-Spoofing & Multilingual Forensics AI") as demo:
-    gr.HTML(EMBEDDED_DASHBOARD_HTML)
+    gr.Markdown("# Voice Anti-Spoofing & Multilingual Forensics API")
+    gr.Markdown("Direct interactive dashboard is served at root [/](/). OpenAPI documentation available at [/docs](/docs).")
 
-# Mount all FastAPI routes (/predict, /predict-file, /ablation-report, /health, /docs) onto demo.app
-demo.app.include_router(fastapi_app.router)
-demo.app.mount("/custom_ui", StaticFiles(directory="static", html=True))
-
-# Intercept static assets so /static/styles.css and /static/script.js resolve directly
-@demo.app.middleware("http")
-async def intercept_static(request, call_next):
-    if request.url.path.startswith("/static/"):
-        rel = request.url.path[len("/static/"):]
-        target_file = Path("static") / rel
-        if target_file.exists() and target_file.is_file():
-            return FileResponse(target_file)
-    return await call_next(request)
+# Mount Gradio onto the existing FastAPI app so root / directly serves the custom dashboard
+app = gr.mount_gradio_app(app, demo, path="/gradio")
 
 if __name__ == "__main__":
-    demo.launch()
+    uvicorn.run(app, host="0.0.0.0", port=7860)
