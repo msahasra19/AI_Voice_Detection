@@ -1,6 +1,7 @@
 import os
 import sys
 from pathlib import Path
+from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 import gradio as gr
 
@@ -31,24 +32,59 @@ def predict_voice_sample(audio_path):
     audio = load_audio_file(audio_bytes)
     return detect_voice(audio)
 
-# Minimal Gradio demo container required by Hugging Face Gradio SDK
+# Full-screen glassmorphic dashboard container
+EMBEDDED_DASHBOARD_HTML = """
+<style>
+body, html {
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+.gradio-container {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    background: #080b14 !important;
+    border: none !important;
+}
+footer {
+    display: none !important;
+}
+iframe#forensics-dashboard {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    z-index: 999999 !important;
+}
+</style>
+<iframe id="forensics-dashboard" src="/custom_ui/index.html"></iframe>
+"""
+
 with gr.Blocks(title="Voice Anti-Spoofing & Multilingual Forensics AI") as demo:
-    pass
+    gr.HTML(EMBEDDED_DASHBOARD_HTML)
 
 # Mount all FastAPI routes (/predict, /predict-file, /ablation-report, /health, /docs) onto demo.app
 demo.app.include_router(fastapi_app.router)
+demo.app.mount("/custom_ui", StaticFiles(directory="static", html=True))
 
-# Intercept root and static asset requests to serve the original custom UI directly
+# Intercept static assets so /static/styles.css and /static/script.js resolve directly
 @demo.app.middleware("http")
-async def custom_frontend_interceptor(request, call_next):
-    path = request.url.path
-    if path in ("/", "/index.html"):
-        index_file = Path("static") / "index.html"
-        if index_file.exists():
-            return FileResponse(index_file)
-    if path.startswith("/static/"):
-        rel_path = path[len("/static/"):]
-        target_file = Path("static") / rel_path
+async def intercept_static(request, call_next):
+    if request.url.path.startswith("/static/"):
+        rel = request.url.path[len("/static/"):]
+        target_file = Path("static") / rel
         if target_file.exists() and target_file.is_file():
             return FileResponse(target_file)
     return await call_next(request)
