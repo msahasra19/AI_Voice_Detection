@@ -23,7 +23,6 @@ function initVoiceForensics() {
     const btnRecordMic = document.getElementById("btnRecordMic");
     const recordBtnText = document.getElementById("recordBtnText");
     const recordTimer = document.getElementById("recordTimer");
-    const btnAnalyze = document.getElementById("btnAnalyze");
     const loadingCard = document.getElementById("loadingCard");
     const resultsSection = document.getElementById("resultsSection");
 
