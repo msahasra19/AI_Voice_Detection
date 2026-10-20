@@ -1,4 +1,5 @@
-// Voice Anti-Spoofing & Multilingual Forensics Client Logic
+(function () {
+    if (window._voiceForensicsInitialized) return;
 
 function initVoiceForensics() {
     if (window._voiceForensicsInitialized) return;
@@ -469,3 +470,4 @@ if (!window._voiceForensicsInitialized) {
     setTimeout(initVoiceForensics, 250);
     setTimeout(initVoiceForensics, 1000);
 }
+})();
