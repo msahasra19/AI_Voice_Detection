@@ -18,6 +18,7 @@ _orig_create_app = App.create_app
 def _patched_create_app(*args, **kwargs):
     app_instance = _orig_create_app(*args, **kwargs)
     app_instance.include_router(fastapi_app.router)
+    app_instance.include_router(fastapi_app.router, prefix="/gradio_api")
     return app_instance
 App.create_app = _patched_create_app
 
@@ -90,6 +91,7 @@ with gr.Blocks(title="Voice Anti-Spoofing & Multilingual Forensics AI") as demo:
 
 # Mount all FastAPI routes (/predict, /predict-file, /ablation-report, /health, /docs)
 demo.app.include_router(fastapi_app.router)
+demo.app.include_router(fastapi_app.router, prefix="/gradio_api")
 
 if __name__ == "__main__":
     demo.launch(head=head_tags, css=combined_css, js=js_content)

@@ -310,6 +310,26 @@ function initVoiceForensics() {
         });
     }
 
+    async function apiFetch(endpoint, options) {
+        // Try Gradio 6 SSR API prefix (/gradio_api) first, then fallback to root (/)
+        const prefixes = ["/gradio_api", ""];
+        let lastResp = null;
+        for (const prefix of prefixes) {
+            try {
+                const targetUrl = prefix + endpoint;
+                const res = await fetch(targetUrl, options);
+                if (res.status === 405 || res.status === 404) {
+                    lastResp = res;
+                    continue;
+                }
+                return res;
+            } catch (err) {
+                console.warn(`Request failed for ${prefix + endpoint}:`, err);
+            }
+        }
+        return lastResp;
+    }
+
     // Run Forensics Analysis
     btnAnalyze.addEventListener("click", async () => {
         if (!currentAudioPayload) return;
@@ -323,26 +343,26 @@ function initVoiceForensics() {
             let lastError = null;
 
             if (currentAudioPayload instanceof File || currentAudioPayload instanceof Blob) {
-                // Attempt 1: Direct multipart upload
+                // Attempt 1: Base64 JSON (immune to SvelteKit multipart CSRF restrictions)
                 try {
-                    const formData = new FormData();
-                    formData.append("file", currentAudioPayload, currentAudioPayload.name || "audio.wav");
-                    response = await fetch("/predict-file", {
+                    const b64 = await fileToBase64(currentAudioPayload);
+                    response = await apiFetch("/predict", {
                         method: "POST",
-                        body: formData
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ audio_data: b64 })
                     });
                 } catch (err) {
-                    console.warn("/predict-file attempt failed, trying base64 fallback:", err);
+                    console.warn("Base64 predict attempt failed, trying multipart:", err);
                 }
 
-                // Attempt 2: Base64 JSON fallback if multipart was blocked or errored
+                // Attempt 2: Direct multipart upload fallback
                 if (!response || !response.ok) {
                     try {
-                        const b64 = await fileToBase64(currentAudioPayload);
-                        response = await fetch("/predict", {
+                        const formData = new FormData();
+                        formData.append("file", currentAudioPayload, currentAudioPayload.name || "audio.wav");
+                        response = await apiFetch("/predict-file", {
                             method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ audio_data: b64 })
+                            body: formData
                         });
                     } catch (err) {
                         lastError = err;
@@ -350,7 +370,7 @@ function initVoiceForensics() {
                 }
             } else if (typeof currentAudioPayload === "string") {
                 // Base64 payload directly
-                response = await fetch("/predict", {
+                response = await apiFetch("/predict", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ audio_data: currentAudioPayload })
@@ -465,7 +485,8 @@ function initVoiceForensics() {
     async function loadAblationReport() {
         ablationTableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px;">Loading ablation experimental metrics...</td></tr>`;
         try {
-            const res = await fetch("/ablation-report");
+            const res = await apiFetch("/ablation-report");
+            if (!res || !res.ok) throw new Error("Ablation report fetch failed");
             const data = await res.json();
             ablationTableBody.innerHTML = "";
 
