@@ -61,10 +61,13 @@ footer { display: none !important; }
 }
 """ + css_content
 
-head_tags = """
+head_tags = f"""
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+<script>
+{js_content}
+</script>
 """
 
 with gr.Blocks(title="Voice Anti-Spoofing & Multilingual Forensics AI") as demo:

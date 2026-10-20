@@ -1,6 +1,11 @@
 // Voice Anti-Spoofing & Multilingual Forensics Client Logic
 
-document.addEventListener("DOMContentLoaded", () => {
+function initVoiceForensics() {
+    if (window._voiceForensicsInitialized) return;
+    const btnAnalyze = document.getElementById("btnAnalyze");
+    if (!btnAnalyze) return;
+    window._voiceForensicsInitialized = true;
+    console.log("[VoiceForensics] Initializing client handlers...");
     // DOM Elements
     const tabForensics = document.getElementById("tabForensics");
     const tabAblation = document.getElementById("tabAblation");
@@ -438,5 +443,29 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    btnRefreshAblation.addEventListener("click", loadAblationReport);
-});
+    if (btnRefreshAblation) {
+        btnRefreshAblation.addEventListener("click", loadAblationReport);
+    }
+}
+
+// Support both standard DOMContentLoaded and SPA / dynamic Gradio script execution
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initVoiceForensics);
+} else {
+    initVoiceForensics();
+}
+
+// Fallback observer if DOM elements are rendered asynchronously by Gradio Blocks
+if (!window._voiceForensicsInitialized) {
+    const observer = new MutationObserver(() => {
+        if (document.getElementById("btnAnalyze")) {
+            observer.disconnect();
+            initVoiceForensics();
+        }
+    });
+    if (document.body) {
+        observer.observe(document.body, { childList: true, subtree: true });
+    }
+    setTimeout(initVoiceForensics, 250);
+    setTimeout(initVoiceForensics, 1000);
+}
