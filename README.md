@@ -9,6 +9,14 @@ app_file: app.py
 
 # Lightweight Privacy-Preserving Voice Anti-Spoofing & Multilingual Speech Analysis System
 
+[![Hugging Face Spaces](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-yellow)](https://huggingface.co/spaces/Sahasram19/ai-voice-detection)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-sahasram19--ai--voice--detection.hf.space-blue?style=flat&logo=google-chrome)](https://sahasram19-ai-voice-detection.hf.space/)
+[![Python 3.11+](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+> 🌐 **Live Interactive Web App**: [https://sahasram19-ai-voice-detection.hf.space/](https://sahasram19-ai-voice-detection.hf.space/)  
+> 🚀 **Hugging Face Space Repository**: [https://huggingface.co/spaces/Sahasram19/ai-voice-detection](https://huggingface.co/spaces/Sahasram19/ai-voice-detection)
+
 An end-to-end, CPU-friendly audio forensics platform that performs two core tasks:
 1. **Deepfake Speech Detection**: Distinguishing bona fide human recordings from AI-generated, neural TTS, voice cloned, and vocoder-synthesized speech using supervised machine learning combined with interpretable acoustic indicators and calibrated decision fusion.
 2. **Multilingual Language Identification**: Zero-shot local language identification and transcript preview using a local, quantized (`int8`) **Faster Whisper** model (no cloud APIs required).
