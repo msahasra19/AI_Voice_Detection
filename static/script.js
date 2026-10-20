@@ -490,21 +490,30 @@ function initVoiceForensics() {
             const data = await res.json();
             ablationTableBody.innerHTML = "";
 
+            if (!data || !Array.isArray(data.configurations)) {
+                throw new Error("Invalid ablation report format received");
+            }
+
             data.configurations.forEach(cfg => {
                 const tr = document.createElement("tr");
-                const isProposed = cfg.config_id.includes("D");
+                const isProposed = (cfg.config_id || "").includes("D");
+                const acc = Number(cfg.accuracy ?? cfg.asvspoof_accuracy ?? 0);
+                const roc = Number(cfg.roc_auc ?? cfg.asvspoof_roc_auc ?? 0);
+                const eer = Number(cfg.eer ?? cfg.asvspoof_eer ?? 0);
+
                 tr.innerHTML = `
-                    <td><span class="config-badge ${isProposed ? 'badge-proposed' : ''}">${cfg.config_id}</span></td>
-                    <td><b>${cfg.name}</b><br><small style="color:var(--text-muted)">${cfg.features}</small></td>
-                    <td>${cfg.classifier}</td>
-                    <td><b>${(cfg.accuracy * 100).toFixed(2)}%</b></td>
-                    <td>${(cfg.roc_auc).toFixed(4)}</td>
-                    <td><b style="color:${cfg.eer < 0.05 ? 'var(--color-emerald)' : 'var(--color-amber)'}">${(cfg.eer * 100).toFixed(2)}%</b></td>
+                    <td><span class="config-badge ${isProposed ? 'badge-proposed' : ''}">${cfg.config_id || ''}</span></td>
+                    <td><b>${cfg.name || ''}</b><br><small style="color:var(--text-muted)">${cfg.features || ''}</small></td>
+                    <td>${cfg.classifier || ''}</td>
+                    <td><b>${(acc * 100).toFixed(2)}%</b></td>
+                    <td>${roc.toFixed(4)}</td>
+                    <td><b style="color:${eer < 0.05 ? 'var(--color-emerald)' : 'var(--color-amber)'}">${(eer * 100).toFixed(2)}%</b></td>
                     <td><span class="status-badge" style="display:inline-flex;">Validated</span></td>
                 `;
                 ablationTableBody.appendChild(tr);
             });
         } catch (e) {
+            console.error("loadAblationReport error:", e);
             ablationTableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--color-rose);">Failed to load ablation report.</td></tr>`;
         }
     }
