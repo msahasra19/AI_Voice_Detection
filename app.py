@@ -3,6 +3,7 @@ import sys
 import re
 from pathlib import Path
 import gradio as gr
+from gradio.routes import App
 
 # Ensure workspace root is in sys.path
 BASE_DIR = Path(__file__).resolve().parent
@@ -11,6 +12,14 @@ sys.path.insert(0, str(BASE_DIR))
 from app.main import app as fastapi_app
 from app.utils import load_audio_file
 from app.model import detect_voice
+
+# Ensure all Gradio App instances mount our custom FastAPI endpoints (/predict, /predict-file, /health, etc.)
+_orig_create_app = App.create_app
+def _patched_create_app(*args, **kwargs):
+    app_instance = _orig_create_app(*args, **kwargs)
+    app_instance.include_router(fastapi_app.router)
+    return app_instance
+App.create_app = _patched_create_app
 
 # Hugging Face ZeroGPU compatibility: ZeroGPU requires an event-bound @spaces.GPU function during startup
 try:
@@ -62,7 +71,7 @@ html, body {
     overflow-y: visible !important;
 }
 .container {
-    padding-top: 48px !important;
+    padding-top: 72px !important;
 }
 """ + css_content
 

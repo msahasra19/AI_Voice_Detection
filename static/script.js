@@ -297,6 +297,19 @@ function initVoiceForensics() {
         return new Uint8Array(buffer);
     }
 
+    function fileToBase64(fileOrBlob) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const res = reader.result;
+                const base64 = typeof res === "string" && res.includes(",") ? res.split(",")[1] : res;
+                resolve(base64);
+            };
+            reader.onerror = (err) => reject(err);
+            reader.readAsDataURL(fileOrBlob);
+        });
+    }
+
     // Run Forensics Analysis
     btnAnalyze.addEventListener("click", async () => {
         if (!currentAudioPayload) return;
@@ -306,25 +319,57 @@ function initVoiceForensics() {
         resultsSection.style.display = "none";
 
         try {
-            let response;
-            if (currentAudioPayload instanceof File) {
-                const formData = new FormData();
-                formData.append("file", currentAudioPayload);
-                response = await fetch("/predict-file", {
-                    method: "POST",
-                    body: formData
-                });
-            } else {
+            let response = null;
+            let lastError = null;
+
+            if (currentAudioPayload instanceof File || currentAudioPayload instanceof Blob) {
+                // Attempt 1: Direct multipart upload
+                try {
+                    const formData = new FormData();
+                    formData.append("file", currentAudioPayload, currentAudioPayload.name || "audio.wav");
+                    response = await fetch("/predict-file", {
+                        method: "POST",
+                        body: formData
+                    });
+                } catch (err) {
+                    console.warn("/predict-file attempt failed, trying base64 fallback:", err);
+                }
+
+                // Attempt 2: Base64 JSON fallback if multipart was blocked or errored
+                if (!response || !response.ok) {
+                    try {
+                        const b64 = await fileToBase64(currentAudioPayload);
+                        response = await fetch("/predict", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ audio_data: b64 })
+                        });
+                    } catch (err) {
+                        lastError = err;
+                    }
+                }
+            } else if (typeof currentAudioPayload === "string") {
+                // Base64 payload directly
                 response = await fetch("/predict", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ audio_base64: currentAudioPayload })
+                    body: JSON.stringify({ audio_data: currentAudioPayload })
                 });
             }
 
-            if (!response.ok) {
-                const errData = await response.json();
-                throw new Error(errData.detail || "Analysis request failed.");
+            if (!response || !response.ok) {
+                let errMsg = "Analysis request failed.";
+                if (response) {
+                    try {
+                        const errData = await response.json();
+                        errMsg = errData.detail || errData.message || errMsg;
+                    } catch (_) {
+                        errMsg = `Server error (${response.status} ${response.statusText || 'Failed'})`;
+                    }
+                } else if (lastError) {
+                    errMsg = lastError.message;
+                }
+                throw new Error(errMsg);
             }
 
             const data = await response.json();
